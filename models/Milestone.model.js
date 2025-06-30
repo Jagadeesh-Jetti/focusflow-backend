@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const milestoneSchema = new mongoose.Schema({
-  goal: { type: mongoose.Schema.Types.ObjectId, ref: 'Goal' },
+  goal: { type: mongoose.Schema.Types.ObjectId, ref: 'Goal', required: false },
   title: { type: String, required: true },
   description: { type: String, required: true },
   targetDate: { type: Date, required: true },
