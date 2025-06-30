@@ -3,8 +3,9 @@ const Milestone = require('../models/Milestone.model');
 
 const createMilestone = async (req, res) => {
   const { goal, title, description, targetDate, tasks } = req.body;
+  console.log('Mielstone post body:', req.body);
 
-  if (!goal || !title || !description || !targetDate) {
+  if (!title || !description || !targetDate) {
     return res.status(400).json({ message: 'Required fields missing' });
   }
 
@@ -30,7 +31,7 @@ const createMilestone = async (req, res) => {
 
 const getMilestones = async (req, res) => {
   try {
-    const milestones = await Milestone.find();
+    const milestones = await Milestone.find().populate('goal');
     res
       .status(200)
       .json({ message: 'Milestones retrieved successfully', milestones });
@@ -50,7 +51,7 @@ const getMilestoneById = async (req, res) => {
   }
 
   try {
-    const milestone = await Milestone.findById(milestoneId);
+    const milestone = await Milestone.findById(milestoneId).populate('goal');
     if (!milestone) {
       return res.status(404).json({ message: 'Milestone not found' });
     }
