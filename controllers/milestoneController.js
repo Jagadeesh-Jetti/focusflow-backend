@@ -3,7 +3,6 @@ const Milestone = require('../models/Milestone.model');
 
 const createMilestone = async (req, res) => {
   const { goal, title, description, targetDate, tasks } = req.body;
-  console.log('Mielstone post body:', req.body);
 
   if (!title || !description || !targetDate) {
     return res.status(400).json({ message: 'Required fields missing' });
