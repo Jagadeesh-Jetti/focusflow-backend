@@ -5,7 +5,7 @@ const createTask = async (req, res) => {
   const { milestone, title, description, dueDate, priority, isCompleted } =
     req.body;
 
-  if (!milestone || !title || !description || !dueDate || !priority) {
+  if (!title || !description || !dueDate || !priority) {
     return res.status(400).json({ message: 'Missing required fields' });
   }
 
