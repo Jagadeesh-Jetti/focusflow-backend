@@ -14,6 +14,7 @@ const createGoal = async (req, res) => {
       description,
       category,
       milestones,
+      user: req.user._id,
     });
 
     res.status(201).json({
@@ -29,7 +30,7 @@ const createGoal = async (req, res) => {
 
 const getGoals = async (req, res) => {
   try {
-    const goals = await Goal.find();
+    const goals = await Goal.find({ user: req.user._id });
     res.status(200).json({ message: 'Goals retrieved successfully', goals });
   } catch (err) {
     res

@@ -17,6 +17,7 @@ const createTask = async (req, res) => {
       dueDate,
       priority,
       isCompleted: isCompleted || false,
+      user: req.user._id,
     });
 
     res.status(201).json({ message: 'Task created successfully', task });
@@ -29,7 +30,7 @@ const createTask = async (req, res) => {
 
 const getTasks = async (req, res) => {
   try {
-    const tasks = await Task.find().populate('milestone');
+    const tasks = await Task.find({ user: req.user._id }).populate('milestone');
     res.status(200).json({ message: 'Tasks retrieved successfully', tasks });
   } catch (error) {
     res

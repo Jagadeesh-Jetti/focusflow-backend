@@ -2,9 +2,12 @@ const mongoose = require('mongoose');
 const Milestone = require('../models/Milestone.model');
 
 const createMilestone = async (req, res) => {
+  console.log('📥 Incoming milestone data:', req.body);
+  console.log('🔒 Authenticated user:', req.user);
+
   const { goal, title, description, targetDate, tasks } = req.body;
 
-  if (!title || !description || !targetDate) {
+  if (!title || !description || !targetDate || !goal) {
     return res.status(400).json({ message: 'Required fields missing' });
   }
 
@@ -15,12 +18,15 @@ const createMilestone = async (req, res) => {
       description,
       targetDate,
       tasks,
+      user: req.user._id,
     });
 
+    console.log('✅ Milestone created:', milestone); // ADD THIS
     res
       .status(201)
       .json({ message: 'Milestone created successfully', milestone });
   } catch (error) {
+    console.error('❌ Error while creating milestone:', error.message); // ADD THIS
     res.status(500).json({
       message: 'Error while creating milestone',
       error: error.message,
@@ -30,7 +36,10 @@ const createMilestone = async (req, res) => {
 
 const getMilestones = async (req, res) => {
   try {
-    const milestones = await Milestone.find().populate('goal');
+    const milestones = await Milestone.find({ user: req.user._id }).populate(
+      'goal'
+    );
+    console.log(milestones);
     res
       .status(200)
       .json({ message: 'Milestones retrieved successfully', milestones });
