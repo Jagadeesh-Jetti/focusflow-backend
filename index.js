@@ -1,13 +1,15 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-
-const app = express();
 
 const connectDB = require('./config/db');
 const authRouter = require('./routers/Auth.router');
 const GoalRouter = require('./routers/Goal.router');
 const MilestoneRouter = require('./routers/Milestones.router');
 const TaskRouter = require('./routers/Task.router');
+const PostRouter = require('./routers/Post.router');
+
+const app = express();
 
 connectDB();
 
@@ -18,6 +20,16 @@ app.get('/', (req, res) => {
   res.send('Hello world');
 });
 
+app.use('/auth', authRouter);
+app.use('/goals', GoalRouter);
+app.use('/milestones', MilestoneRouter);
+app.use('/tasks', TaskRouter);
+app.use('/posts', PostRouter);
+
+app.use((req, res, next) => {
+  res.status(404).json({ message: 'Route not found' });
+});
+
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res
@@ -25,13 +37,7 @@ app.use((err, req, res, next) => {
     .json({ error: err.message || 'Something went wrong' });
 });
 
-app.use('/auth', authRouter);
-app.use('/goals', GoalRouter);
-app.use('/milestones', MilestoneRouter);
-app.use('/tasks', TaskRouter);
-
 const PORT = process.env.PORT || 3000;
-
 app.listen(PORT, () => {
   console.log(`🚀 Server is running on http://localhost:${PORT}`);
 });
