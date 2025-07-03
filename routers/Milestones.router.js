@@ -6,13 +6,14 @@ const {
   updateMilestoneById,
   deleteMilestoneById,
 } = require('../controllers/milestoneController');
+const protectRoute = require('../middlewares/authMiddleware');
 
 const MilestoneRouter = express.Router();
 
-MilestoneRouter.get('/', getMilestones);
-MilestoneRouter.post('/', createMilestone);
-MilestoneRouter.get('/:id', getMilestoneById);
-MilestoneRouter.put('/:id', updateMilestoneById);
-MilestoneRouter.delete('/:id', deleteMilestoneById);
+MilestoneRouter.get('/', protectRoute, getMilestones);
+MilestoneRouter.post('/', protectRoute, createMilestone);
+MilestoneRouter.get('/:id', protectRoute, getMilestoneById);
+MilestoneRouter.put('/:id', protectRoute, updateMilestoneById);
+MilestoneRouter.delete('/:id', protectRoute, deleteMilestoneById);
 
 module.exports = MilestoneRouter;

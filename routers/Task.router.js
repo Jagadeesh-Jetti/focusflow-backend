@@ -6,13 +6,14 @@ const {
   updateTaskById,
   deleteTaskById,
 } = require('../controllers/taskController');
+const protectRoute = require('../middlewares/authMiddleware');
 
 const TaskRouter = express.Router();
 
-TaskRouter.get('/', getTasks);
-TaskRouter.get('/:id', getTaskById);
-TaskRouter.post('/', createTask);
-TaskRouter.put('/:id', updateTaskById);
-TaskRouter.delete('/:id', deleteTaskById);
+TaskRouter.get('/', protectRoute, getTasks);
+TaskRouter.get('/:id', protectRoute, getTaskById);
+TaskRouter.post('/', protectRoute, createTask);
+TaskRouter.put('/:id', protectRoute, updateTaskById);
+TaskRouter.delete('/:id', protectRoute, deleteTaskById);
 
 module.exports = TaskRouter;
