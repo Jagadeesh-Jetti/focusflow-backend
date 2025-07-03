@@ -15,8 +15,8 @@ const PostRouter = express.Router();
 PostRouter.get('/', protectRoute, GetPosts);
 PostRouter.post('/', protectRoute, createPost);
 PostRouter.get('/:id', protectRoute, getPostById);
-PostRouter.post('/:id', protectRoute, toggleLikePost);
-PostRouter.put('/:id', protectRoute, commentPost);
+PostRouter.patch('/:id/like', protectRoute, toggleLikePost);
+PostRouter.post('/:id/comment', protectRoute, commentPost);
 PostRouter.delete('/:id', protectRoute, deletePost);
 
 module.exports = PostRouter;
