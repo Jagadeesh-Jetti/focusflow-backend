@@ -2,17 +2,20 @@ const Post = require('../models/Post.model');
 const mongoose = require('mongoose');
 
 const createPost = async (req, res) => {
-  const { content, relatedGoal, relatedMilestone, image } = req.body;
+  const { content, relatedGoal, relatedMilestone } = req.body;
+  const imageFile = req.file;
 
-  if (!content || !image) {
-    return res.status(404).json({ message: 'Input fields missing' });
+  if (!content || !imageFile) {
+    return res.status(400).json({ message: 'Input fields missing' });
   }
+
+  const imageUrl = `/uploads/${imageFile.filename}`;
 
   try {
     const post = await Post.create({
       user: req.user._id,
       content,
-      image,
+      image: imageUrl,
       relatedGoal,
       relatedMilestone,
     });

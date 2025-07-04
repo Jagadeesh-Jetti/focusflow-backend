@@ -25,6 +25,7 @@ app.use('/goals', GoalRouter);
 app.use('/milestones', MilestoneRouter);
 app.use('/tasks', TaskRouter);
 app.use('/posts', PostRouter);
+app.use('/uploads', express.static('uploads'));
 
 app.use((req, res, next) => {
   res.status(404).json({ message: 'Route not found' });
