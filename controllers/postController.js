@@ -1,7 +1,8 @@
 const Post = require('../models/Post.model');
+const mongoose = require('mongoose');
 
-export const createPost = async (postData) => {
-  const { content, relatedGoal, relatedMilestone, image } = postData;
+const createPost = async (req, res) => {
+  const { content, relatedGoal, relatedMilestone, image } = req.body;
 
   if (!content || !image) {
     return res.status(404).json({ message: 'Input fields missing' });
@@ -24,7 +25,7 @@ export const createPost = async (postData) => {
   }
 };
 
-export const GetPosts = async (req, res) => {
+const getPosts = async (req, res) => {
   try {
     const posts = await Post.find()
       .populate('user', 'name email')
@@ -40,10 +41,10 @@ export const GetPosts = async (req, res) => {
   }
 };
 
-export const getPostById = async (req, res) => {
+const getPostById = async (req, res) => {
   const { id } = req.params;
 
-  const checkId = mongoose.Schema.Types.ObjectId.isValid(id);
+  const checkId = mongoose.Types.ObjectId.isValid(id);
   if (!checkId) {
     return res.status(404).json({ message: 'Id not found' });
   }
@@ -61,9 +62,9 @@ export const getPostById = async (req, res) => {
   }
 };
 
-export const toggleLikePost = async (req, res) => {
+const toggleLikePost = async (req, res) => {
   const postId = req.params.id;
-  const userId = req.params._id;
+  const userId = req.user._id;
 
   try {
     const post = await Post.findById(postId);
@@ -89,7 +90,7 @@ export const toggleLikePost = async (req, res) => {
   }
 };
 
-export const commentPost = async (req, res) => {
+const commentPost = async (req, res) => {
   const { id } = req.params;
   const { comment } = req.body;
 
@@ -116,7 +117,7 @@ export const commentPost = async (req, res) => {
   }
 };
 
-export const deletePost = async (req, res) => {
+const deletePost = async (req, res) => {
   const { postId } = req.params;
 
   if (!mongoose.Types.ObjectId.isValid(id)) {

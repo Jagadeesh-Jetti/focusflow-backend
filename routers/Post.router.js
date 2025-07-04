@@ -2,7 +2,7 @@ const express = require('express');
 const protectRoute = require('../middlewares/authMiddleware');
 const {
   createPost,
-  GetPosts,
+  getPosts,
   getPostById,
   toggleLikePost,
   commentPost,
@@ -12,7 +12,7 @@ const Post = require('../models/Post.model');
 
 const PostRouter = express.Router();
 
-PostRouter.get('/', protectRoute, GetPosts);
+PostRouter.get('/', protectRoute, getPosts);
 PostRouter.post('/', protectRoute, createPost);
 PostRouter.get('/:id', protectRoute, getPostById);
 PostRouter.patch('/:id/like', protectRoute, toggleLikePost);
