@@ -4,7 +4,7 @@ const taskSchema = new mongoose.Schema({
   milestone: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Milestone',
-    required: true,
+    required: false,
   },
   user: {
     type: mongoose.Schema.Types.ObjectId,
