@@ -70,7 +70,7 @@ const toggleLikePost = async (req, res) => {
   const userId = req.user._id;
 
   try {
-    const post = await Post.findById(postId);
+    let post = await Post.findById(postId);
 
     if (!post) {
       return res.status(404).json({ message: 'Post not found' });
@@ -85,6 +85,12 @@ const toggleLikePost = async (req, res) => {
     }
 
     await post.save();
+
+    post = await Post.findById(postId)
+      .populate('user', 'name')
+      .populate('relatedGoal', 'title')
+      .populate('relatedMilestone', 'title');
+
     res.status(200).json({ message: alreadyLiked ? 'Unliked' : 'Liked', post });
   } catch (err) {
     res
@@ -106,13 +112,21 @@ const commentPost = async (req, res) => {
   }
 
   try {
-    const post = await Post.findById(id);
+    let post = await Post.findById(id);
     if (!post) return res.status(404).json({ message: 'Post not found' });
 
     post.comments.push({ user: req.user._id, comment });
     await post.save();
 
-    res.status(200).json({ message: 'Comment added successfully', post });
+    const updatedPost = await Post.findById(id)
+      .populate('user', 'name')
+      .populate('relatedGoal', 'title')
+      .populate('relatedMilestone', 'title')
+      .populate('comments.user', 'name'); // important!
+
+    res
+      .status(200)
+      .json({ message: 'Comment added successfully', post: updatedPost });
   } catch (err) {
     res
       .status(500)
