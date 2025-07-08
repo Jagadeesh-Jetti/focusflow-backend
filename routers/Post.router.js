@@ -1,6 +1,6 @@
 const express = require('express');
 const multer = require('multer');
-const upload = multer({ dest: 'uploads/' });
+const upload = require('../middlewares/upload');
 
 const protectRoute = require('../middlewares/authMiddleware');
 const {
@@ -21,5 +21,6 @@ PostRouter.get('/:id', protectRoute, getPostById);
 PostRouter.patch('/:id/like', protectRoute, toggleLikePost);
 PostRouter.post('/:id/comment', protectRoute, commentPost);
 PostRouter.delete('/:id', protectRoute, deletePost);
+PostRouter.post('/', protectRoute, upload.single('image'), createPost);
 
 module.exports = PostRouter;
