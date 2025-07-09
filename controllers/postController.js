@@ -2,15 +2,20 @@ const Post = require('../models/Post.model');
 const mongoose = require('mongoose');
 
 const createPost = async (req, res) => {
-  const imageUrl = req.file.path;
-  const { content, relatedGoal, relatedMilestone } = req.body;
-  const imageFile = req.file;
-
-  if (!content || !imageFile) {
-    return res.status(400).json({ message: 'Input fields missing' });
-  }
-
+  console.log(req);
   try {
+    const { content, relatedGoal, relatedMilestone } = req.body;
+
+    if (!content?.trim()) {
+      return res.status(400).json({ message: 'Post content is required.' });
+    }
+
+    console.log('📦 Received file:', req.file?.path || 'No file received');
+    console.log('📝 Content:', req.body.content);
+
+    // ✅ Safely extract Cloudinary URL
+    const imageUrl = req.file ? req.file.path : '';
+
     const post = await Post.create({
       user: req.user._id,
       content,
@@ -21,6 +26,7 @@ const createPost = async (req, res) => {
 
     res.status(201).json({ message: 'Post created', post });
   } catch (err) {
+    console.error('❌ Error creating post:', err);
     res
       .status(500)
       .json({ message: 'Error creating post', error: err.message });
