@@ -3,11 +3,12 @@ const express = require('express');
 const cors = require('cors');
 
 const connectDB = require('./config/db');
-const authRouter = require('./routers/Auth.router');
 const GoalRouter = require('./routers/Goal.router');
 const MilestoneRouter = require('./routers/Milestones.router');
 const TaskRouter = require('./routers/Task.router');
 const PostRouter = require('./routers/Post.router');
+const UserRouter = require('./routers/User.router');
+const AuthRouter = require('./routers/Auth.router');
 
 const app = express();
 
@@ -25,11 +26,12 @@ app.get('/', (req, res) => {
   res.send('Hello world');
 });
 
-app.use('/auth', authRouter);
+app.use('/auth', AuthRouter);
 app.use('/goals', GoalRouter);
 app.use('/milestones', MilestoneRouter);
 app.use('/tasks', TaskRouter);
 app.use('/posts', PostRouter);
+app.use('/users', UserRouter);
 app.use('/uploads', express.static('uploads'));
 
 app.use((req, res, next) => {
