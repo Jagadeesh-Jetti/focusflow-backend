@@ -3,8 +3,8 @@ const User = require('../models/User.model');
 const generateToken = require('../utils/generateToken');
 
 const registerUser = async (req, res) => {
-  console.log('Register request received');
-  console.log('Request body:', req.body);
+  // console.log('Register request received');
+  // console.log('Request body:', req.body);
 
   const { name, email, password } = req.body;
   if (!name || !email || !password) {
@@ -38,7 +38,7 @@ const registerUser = async (req, res) => {
       },
     });
   } catch (err) {
-    console.error(err);
+    // console.error(err);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -70,7 +70,7 @@ const loginUser = async (req, res) => {
       },
     });
   } catch (err) {
-    console.error(err);
+    // console.error(err);
     res.status(500).json({ message: 'Server error' });
   }
 };

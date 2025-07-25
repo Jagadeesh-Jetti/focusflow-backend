@@ -195,7 +195,7 @@ Return only this format (pure JSON):
 
 const saveAIPlan = async (req, res) => {
   try {
-    console.log('this is reqbody from saveaiplan', req.body);
+    // console.log('this is reqbody from saveaiplan', req.body);
     const { goal, category, description, milestones } = req.body;
     const userId = req.user._id;
 
@@ -254,7 +254,7 @@ const saveAIPlan = async (req, res) => {
       goal: newGoal,
     });
   } catch (err) {
-    console.error('❌ Error saving AI goal:', err);
+    // console.error('❌ Error saving AI goal:', err);
     res.status(500).json({ error: 'Failed to save AI goal' });
   }
 };

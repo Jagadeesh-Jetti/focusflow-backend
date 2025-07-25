@@ -57,7 +57,9 @@ const updateUserProfile = async (req, res) => {
 
 const followUser = async (req, res) => {
   const targetUserId = req.params.id;
+  console.log('target id', targetUserId);
   const currentUserId = req.user.id;
+  console.log('currentUser Id', currentUserId);
 
   try {
     if (currentUserId === targetUserId) {
@@ -66,12 +68,16 @@ const followUser = async (req, res) => {
 
     const currentUser = await User.findById(currentUserId);
     const targetUser = await User.findById(targetUserId);
+    console.log(currentUser);
+    console.log(targetUser);
 
     if (!targetUser) {
       return res.status(404).json({ message: 'Target user not found' });
     }
 
-    if (currentUser.following.includes(targetUserId)) {
+    if (
+      currentUser.following.map((id) => id.toString()).includes(targetUserId)
+    ) {
       return res.status(400).json({ message: 'Already following this user' });
     }
 
