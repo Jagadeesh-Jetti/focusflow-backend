@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const Task = require('../models/Task.model');
 
 const createTask = async (req, res) => {
-  const { milestone, title, description, dueDate, priority, isCompleted } =
+  const { milestone, goal, title, description, dueDate, priority, status } =
     req.body;
 
   if (!title || !description || !dueDate || !priority) {
@@ -12,11 +12,13 @@ const createTask = async (req, res) => {
   try {
     const task = await Task.create({
       milestone,
+      goal,
       title,
       description,
       dueDate,
       priority,
-      isCompleted: isCompleted || false,
+      status,
+      completedAt: status === 'completed' ? new Date() : null,
       user: req.user._id,
     });
 
@@ -30,7 +32,9 @@ const createTask = async (req, res) => {
 
 const getTasks = async (req, res) => {
   try {
-    const tasks = await Task.find({ user: req.user._id }).populate('milestone');
+    const tasks = await Task.find({ user: req.user._id })
+      .populate('goal')
+      .populate('milestone');
     res.status(200).json({ message: 'Tasks retrieved successfully', tasks });
   } catch (error) {
     res
@@ -68,13 +72,26 @@ const updateTaskById = async (req, res) => {
   }
 
   try {
+    const task = await Task.findById(taskId);
+
+    if (!task) {
+      return res.status(404).json({ message: 'Task not found' });
+    }
+
+    if (updatedData.status) {
+      if (updatedData.status === 'completed') {
+        updatedData.completedAt = new Date();
+      } else if (
+        task.status === 'completed' &&
+        updatedData.status !== 'completed'
+      ) {
+        updatedData.completedAt = null;
+      }
+    }
+
     const updatedTask = await Task.findByIdAndUpdate(taskId, updatedData, {
       new: true,
     });
-
-    if (!updatedTask) {
-      return res.status(404).json({ message: 'Task not found' });
-    }
 
     res
       .status(200)
