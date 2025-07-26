@@ -5,7 +5,15 @@ const Milestone = require('../models/Milestone.model');
 const Task = require('../models/Task.model');
 
 const createGoal = async (req, res) => {
-  const { title, description, category, milestones } = req.body;
+  const {
+    title,
+    description,
+    category,
+    milestones,
+    priority,
+    status,
+    dueDate,
+  } = req.body;
 
   try {
     if (!title || !description || !category) {
@@ -17,6 +25,9 @@ const createGoal = async (req, res) => {
       description,
       category,
       milestones,
+      status,
+      priority,
+      dueDate,
       user: req.user._id,
     });
 
@@ -55,7 +66,7 @@ const getGoalById = async (req, res) => {
   }
 
   try {
-    const goal = await Goal.findById(goalId);
+    const goal = await Goal.findById(goalId).populate('tasks');
 
     if (!goal) {
       return res.status(404).json({ message: 'Goal not found' });
