@@ -9,6 +9,8 @@ const TaskRouter = require('./routers/Task.router');
 const PostRouter = require('./routers/Post.router');
 const UserRouter = require('./routers/User.router');
 const AuthRouter = require('./routers/Auth.router');
+const Goal = require('./models/Goal.model');
+const Task = require('./models/Task.model');
 
 const app = express();
 
@@ -46,6 +48,6 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`🚀 Server is running on http://localhost:${PORT}`);
 });
