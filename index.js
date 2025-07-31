@@ -11,6 +11,7 @@ const UserRouter = require('./routers/User.router');
 const AuthRouter = require('./routers/Auth.router');
 const Goal = require('./models/Goal.model');
 const Task = require('./models/Task.model');
+const DashboardRouter = require('./routers/Dashboard.router');
 
 const app = express();
 
@@ -34,6 +35,7 @@ app.use('/milestones', MilestoneRouter);
 app.use('/tasks', TaskRouter);
 app.use('/posts', PostRouter);
 app.use('/users', UserRouter);
+app.use('/dashboard', DashboardRouter);
 app.use('/uploads', express.static('uploads'));
 
 app.use((req, res, next) => {

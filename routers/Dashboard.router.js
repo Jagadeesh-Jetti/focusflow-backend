@@ -1,16 +1,16 @@
 const express = require('express');
-const router = express.Router();
+const DashboardRouter = express.Router();
 const {
-  getState,
+  getStats,
   getProgress,
   getDeadlines,
   getHistory,
-} = require('../controllers/dashboard.controller');
-const { getStats } = require('../controllers/dashboardController');
+} = require('../controllers/dashboardController');
+const protectRoute = require('../middlewares/authMiddleware');
 
-router.get('/stats', getStats);
-router.get('/progress', getProgress);
-router.get('/deadlines', getDeadlines);
-router.get('/history', getHistory);
+DashboardRouter.get('/stats', protectRoute, getStats);
+DashboardRouter.get('/progress', protectRoute, getProgress);
+DashboardRouter.get('/deadlines', protectRoute, getDeadlines);
+DashboardRouter.get('/history', protectRoute, getHistory);
 
-module.exports = router;
+module.exports = DashboardRouter;
