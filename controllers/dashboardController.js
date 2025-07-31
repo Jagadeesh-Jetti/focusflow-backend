@@ -1,93 +1,161 @@
-const Task = require('../models/Task');
-const Goal = require('../models/Goal');
+const Task = require('../models/Task.model');
+const Goal = require('../models/Goal.model');
+const Milestone = require('../models/Milestone.model');
 
-exports.getStats = async (req, res) => {
+const getStats = async (req, res) => {
   try {
     const userId = req.user._id;
 
+    const totalGoals = await Goal.countDocuments({ user: userId });
     const totalTasks = await Task.countDocuments({ user: userId });
     const completedTasks = await Task.countDocuments({
       user: userId,
-      isCompleted: true,
+      status: 'completed',
     });
     const pendingTasks = totalTasks - completedTasks;
-    const activeGoals = await Task.countDocuments({
+
+    const activeGoals = await Goal.countDocuments({
       user: userId,
-      isCompleted: false,
+      status: { $ne: 'completed' },
     });
-    res.json({ totalTasks, completedTasks, pendingTasks, activeGoals });
+
+    res.json({
+      totalGoals,
+      totalTasks,
+      completedTasks,
+      pendingTasks,
+      activeGoals,
+    });
   } catch (error) {
+    console.error('Error fetching stats:', error);
     res.status(500).json({ error: 'Error fetching stats' });
   }
 };
 
-exports.getProgress = async (req, res) => {
+const getProgress = async (req, res) => {
   try {
     const userId = req.user._id;
-    const goals = await goal.find({ user: userId }).populate('tasks');
 
-    const progress = goals.map((goal) => {
-      const total = goal.tasks.length;
-      const completed = goal.tasks.filter((task) => task.isCompleted).length;
+    const milestones = await Milestone.aggregate([
+      { $match: { user: userId } },
+      {
+        $lookup: {
+          from: 'tasks',
+          localField: '_id',
+          foreignField: 'milestone',
+          as: 'tasks',
+        },
+      },
+      {
+        $addFields: {
+          totalTasks: { $size: '$tasks' },
+          completedTasks: {
+            $size: {
+              $filter: {
+                input: '$tasks',
+                as: 'task',
+                cond: { $eq: ['$$task.status', 'completed'] },
+              },
+            },
+          },
+          progress: {
+            $cond: [
+              { $gt: [{ $size: '$tasks' }, 0] },
+              {
+                $multiply: [
+                  {
+                    $divide: [
+                      {
+                        $size: {
+                          $filter: {
+                            input: '$tasks',
+                            as: 'task',
+                            cond: { $eq: ['$$task.status', 'completed'] },
+                          },
+                        },
+                      },
+                      { $size: '$tasks' },
+                    ],
+                  },
+                  100,
+                ],
+              },
+              0,
+            ],
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          name: '$title',
+          progress: { $round: ['$progress', 0] },
+        },
+      },
+    ]);
 
-      return {
-        goalTitle: goal.title,
-        totalTasks: total,
-        completedTasks: completed,
-      };
-
-      res.json(progress);
-    });
+    res.json(milestones);
   } catch (err) {
-    res.status(500).json({ error: 'Error fetching goal progress' });
+    console.error('Error fetching milestone progress:', err);
+    res.status(500).json({ error: 'Error fetching milestone progress' });
   }
 };
 
-exports.getDeadlines = async (req, res) => {
+const getDeadlines = async (req, res) => {
   try {
     const userId = req.user._id;
-    const today = new Data();
+    const today = new Date();
 
     const upcomingTasks = await Task.find({
       user: userId,
-      isCompleted: false,
+      status: { $ne: 'completed' },
       dueDate: { $gte: today },
     })
       .sort({ dueDate: 1 })
-      .limits(5);
+      .limit(5);
 
     res.json(upcomingTasks);
   } catch (error) {
+    console.error('Error while fetching deadlines:', error);
     res.status(500).json({ error: 'Error while fetching deadlines' });
   }
 };
 
+const getHistory = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const today = new Date();
 
-exports.getHistory = async (req, res) => {
-    try{
-        const userId = req.user._id;
-        const past30Days = new Date();
-        past30Days.setDate(past30Days.getDate() - 30);
+    const startOfWeek = new Date(today);
+    const dayOfWeek = (today.getDay() + 6) % 7;
+    startOfWeek.setDate(today.getDate() - dayOfWeek);
+    startOfWeek.setHours(0, 0, 0, 0);
 
-        const tasks = await Task.find({
-            user: userId,
-            isCompleted: true,
-            completedAt: {$gte: past30Days},
-        })
+    const tasks = await Task.find({
+      user: userId,
+      status: 'completed',
+      completedAt: { $gte: startOfWeek },
+    });
 
-        const historyMap = {};
+    const countsPerDay = [0, 0, 0, 0, 0, 0, 0];
 
-        tasks.forEach(task => {
-            const dateKey = task.completedAt.toISOString().split('T')[0];
-            historyMap[dateKey] = (historyMap[dateKey] || 0) = 1
-        }); 
+    tasks.forEach((task) => {
+      if (task.completedAt) {
+        const day = (task.completedAt.getDay() + 6) % 7;
+        return (countsPerDay[day] += 1);
+      }
+    });
 
-        const history = Object.entries(historyMap).map(([date, count]) => ({
-            date, count,
-        }))
+    res.json(countsPerDay);
+  } catch (error) {
+    console.error('Error fetching task history:', error);
+    res.status(500).json({ error: 'Error fetching task history' });
+  }
+};
 
-        res.json(history);
-    }catch(error){
-        res.status(500).json({ error: 'Error fetching task history'})
-    }
-}
+module.exports = {
+  getStats,
+  getProgress,
+  getHistory,
+  getDeadlines,
+};
