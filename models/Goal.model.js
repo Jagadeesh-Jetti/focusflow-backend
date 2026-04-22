@@ -7,7 +7,7 @@ const goalSchema = new mongoose.Schema({
   category: { type: String, required: true },
 
   status: { type: String, enum: ['Not Started', 'In Progress', 'Completed'] },
-  priority: { type: String, enum: ['Low', 'Meduim', 'High'] },
+  priority: { type: String, enum: ['Low', 'Medium', 'High'] },
   dueDate: { type: Date, required: false },
   milestones: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Milestone' }],
   tasks: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Task' }],
