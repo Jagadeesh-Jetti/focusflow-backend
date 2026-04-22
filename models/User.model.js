@@ -11,7 +11,7 @@ const userSchema = new mongoose.Schema({
   location: { type: String, default: '' },
   followers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   following: [{ type: mongoose.Types.ObjectId, ref: 'User' }],
-  likes: { type: Number, dafault: 0 },
+  likes: { type: Number, default: 0 },
 
   posts: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Post' }],
   goals: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Goal' }],
