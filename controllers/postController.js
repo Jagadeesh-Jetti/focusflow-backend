@@ -140,23 +140,31 @@ const commentPost = async (req, res) => {
 };
 
 const deletePost = async (req, res) => {
-  const { postId } = req.params;
+  const { id } = req.params;
 
   if (!mongoose.Types.ObjectId.isValid(id)) {
     return res.status(400).json({ message: 'Invalid post ID' });
   }
 
   try {
-    const post = await Post.findByIdAndDelete(postId);
+    const post = await Post.findById(id);
 
     if (!post) {
-      return res.status(500).json({ message: 'Post not found' });
+      return res.status(404).json({ message: 'Post not found' });
     }
+
+    if (String(post.user) !== String(req.user._id)) {
+      return res
+        .status(403)
+        .json({ message: 'You can only delete your own posts' });
+    }
+
+    await post.deleteOne();
     res.status(200).json({ message: 'Post deleted successfully', post });
   } catch (err) {
     res
       .status(500)
-      .json({ message: 'Error while deleting comment', error: err.message });
+      .json({ message: 'Error while deleting post', error: err.message });
   }
 };
 
