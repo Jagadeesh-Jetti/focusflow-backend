@@ -33,14 +33,35 @@ const getUserProfile = async (req, res) => {
   }
 };
 
+const ALLOWED_PROFILE_FIELDS = [
+  'name',
+  'bio',
+  'location',
+  'profilePic',
+  'bannerPic',
+];
+
 const updateUserProfile = async (req, res) => {
   const userId = req.params.id;
-  const updatedData = req.body;
+
+  if (String(userId) !== String(req.user._id)) {
+    return res
+      .status(403)
+      .json({ message: 'You can only update your own profile' });
+  }
+
+  const updatedData = {};
+  for (const field of ALLOWED_PROFILE_FIELDS) {
+    if (req.body[field] !== undefined) {
+      updatedData[field] = req.body[field];
+    }
+  }
 
   try {
     const updatedUser = await User.findByIdAndUpdate(userId, updatedData, {
       new: true,
-    });
+      runValidators: true,
+    }).select('-password');
 
     if (!updatedUser) {
       return res.status(404).json({ message: 'User not found' });
