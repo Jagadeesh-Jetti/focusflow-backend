@@ -2,7 +2,7 @@ const User = require('../models/User.model');
 
 const getAllUsers = async (req, res) => {
   try {
-    const users = await User.find();
+    const users = await User.find().select('-password');
     res.status(200).json({ message: 'Users retrieved successfully', users });
   } catch (error) {
     res
@@ -15,6 +15,7 @@ const getUserProfile = async (req, res) => {
   const userId = req.params.id;
   try {
     const user = await User.findById(userId)
+      .select('-password')
       .populate('followers', 'name profilePic')
       .populate('following', 'name profilePic')
       .populate('posts', 'content createdAt')
