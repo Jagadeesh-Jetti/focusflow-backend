@@ -72,6 +72,12 @@ const getGoalById = async (req, res) => {
       return res.status(404).json({ message: 'Goal not found' });
     }
 
+    if (String(goal.user) !== String(req.user._id)) {
+      return res
+        .status(403)
+        .json({ message: 'You can only view your own goals' });
+    }
+
     res.status(200).json({
       message: 'Goal retrieved successfully',
       goal,
@@ -146,13 +152,23 @@ const updateGoalById = async (req, res) => {
   }
 
   try {
+    const existing = await Goal.findById(goalId);
+
+    if (!existing) {
+      return res.status(404).json({ message: 'Goal not found' });
+    }
+
+    if (String(existing.user) !== String(req.user._id)) {
+      return res
+        .status(403)
+        .json({ message: 'You can only update your own goals' });
+    }
+
+    delete updatedData.user;
+
     const updatedGoal = await Goal.findByIdAndUpdate(goalId, updatedData, {
       new: true,
     });
-
-    if (!updatedGoal) {
-      return res.status(404).json({ message: 'Goal not found' });
-    }
 
     res.status(200).json({
       message: 'Goal updated successfully',
@@ -174,15 +190,23 @@ const deleteGoalById = async (req, res) => {
   }
 
   try {
-    const goalDeleted = await Goal.findByIdAndDelete(goalId);
+    const existing = await Goal.findById(goalId);
 
-    if (!goalDeleted) {
+    if (!existing) {
       return res.status(404).json({ message: 'Goal not found' });
     }
 
+    if (String(existing.user) !== String(req.user._id)) {
+      return res
+        .status(403)
+        .json({ message: 'You can only delete your own goals' });
+    }
+
+    await existing.deleteOne();
+
     res.status(200).json({
       message: 'Goal deleted successfully',
-      goal: goalDeleted,
+      goal: existing,
     });
   } catch (error) {
     res.status(500).json({

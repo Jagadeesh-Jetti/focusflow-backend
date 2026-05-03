@@ -55,6 +55,11 @@ const getTaskById = async (req, res) => {
     if (!task) {
       return res.status(404).json({ message: 'Task not found' });
     }
+    if (String(task.user) !== String(req.user._id)) {
+      return res
+        .status(403)
+        .json({ message: 'You can only view your own tasks' });
+    }
     res.status(200).json({ message: 'Task retrieved successfully', task });
   } catch (error) {
     res
@@ -77,6 +82,13 @@ const updateTaskById = async (req, res) => {
     if (!task) {
       return res.status(404).json({ message: 'Task not found' });
     }
+    if (String(task.user) !== String(req.user._id)) {
+      return res
+        .status(403)
+        .json({ message: 'You can only update your own tasks' });
+    }
+
+    delete updatedData.user;
 
     if (updatedData.status) {
       if (updatedData.status === 'completed') {
@@ -111,15 +123,22 @@ const deleteTaskById = async (req, res) => {
   }
 
   try {
-    const deletedTask = await Task.findByIdAndDelete(taskId);
+    const existing = await Task.findById(taskId);
 
-    if (!deletedTask) {
+    if (!existing) {
       return res.status(404).json({ message: 'Task not found' });
     }
+    if (String(existing.user) !== String(req.user._id)) {
+      return res
+        .status(403)
+        .json({ message: 'You can only delete your own tasks' });
+    }
+
+    await existing.deleteOne();
 
     res
       .status(200)
-      .json({ message: 'Task deleted successfully', task: deletedTask });
+      .json({ message: 'Task deleted successfully', task: existing });
   } catch (error) {
     res
       .status(500)

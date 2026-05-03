@@ -1,17 +1,29 @@
 const mongoose = require('mongoose');
 const Milestone = require('../models/Milestone.model');
+const Goal = require('../models/Goal.model');
 
 const createMilestone = async (req, res) => {
-  // console.log('📥 Incoming milestone data:', req.body);
-  // console.log('🔒 Authenticated user:', req.user);
-
   const { goal, title, description, targetDate, tasks } = req.body;
 
   if (!title || !description || !targetDate || !goal) {
     return res.status(400).json({ message: 'Required fields missing' });
   }
 
+  if (!mongoose.Types.ObjectId.isValid(goal)) {
+    return res.status(400).json({ message: 'Invalid goal ID' });
+  }
+
   try {
+    const parentGoal = await Goal.findById(goal);
+    if (!parentGoal) {
+      return res.status(404).json({ message: 'Parent goal not found' });
+    }
+    if (String(parentGoal.user) !== String(req.user._id)) {
+      return res
+        .status(403)
+        .json({ message: 'You can only add milestones to your own goals' });
+    }
+
     const milestone = await Milestone.create({
       goal,
       title,
@@ -21,12 +33,18 @@ const createMilestone = async (req, res) => {
       user: req.user._id,
     });
 
-    // console.log('✅ Milestone created:', milestone); // ADD THIS
+    parentGoal.milestones = parentGoal.milestones || [];
+    if (
+      !parentGoal.milestones.some((m) => String(m) === String(milestone._id))
+    ) {
+      parentGoal.milestones.push(milestone._id);
+      await parentGoal.save();
+    }
+
     res
       .status(201)
       .json({ message: 'Milestone created successfully', milestone });
   } catch (error) {
-    // console.error('❌ Error while creating milestone:', error.message); // ADD THIS
     res.status(500).json({
       message: 'Error while creating milestone',
       error: error.message,
@@ -39,7 +57,6 @@ const getMilestones = async (req, res) => {
     const milestones = await Milestone.find({ user: req.user._id }).populate(
       'goal'
     );
-    // console.log(milestones);
     res
       .status(200)
       .json({ message: 'Milestones retrieved successfully', milestones });
@@ -63,6 +80,11 @@ const getMilestoneById = async (req, res) => {
     if (!milestone) {
       return res.status(404).json({ message: 'Milestone not found' });
     }
+    if (String(milestone.user) !== String(req.user._id)) {
+      return res
+        .status(403)
+        .json({ message: 'You can only view your own milestones' });
+    }
 
     res
       .status(200)
@@ -83,14 +105,24 @@ const updateMilestoneById = async (req, res) => {
   }
 
   try {
+    const existing = await Milestone.findById(milestoneId);
+    if (!existing) {
+      return res.status(404).json({ message: 'Milestone not found' });
+    }
+    if (String(existing.user) !== String(req.user._id)) {
+      return res
+        .status(403)
+        .json({ message: 'You can only update your own milestones' });
+    }
+
+    delete updatedData.user;
+    delete updatedData.goal;
+
     const milestone = await Milestone.findByIdAndUpdate(
       milestoneId,
       updatedData,
-      { new: true }
+      { new: true, runValidators: true }
     );
-    if (!milestone) {
-      return res.status(404).json({ message: 'Milestone not found' });
-    }
 
     res
       .status(200)
@@ -110,14 +142,28 @@ const deleteMilestoneById = async (req, res) => {
   }
 
   try {
-    const milestone = await Milestone.findByIdAndDelete(milestoneId);
-    if (!milestone) {
+    const existing = await Milestone.findById(milestoneId);
+    if (!existing) {
       return res.status(404).json({ message: 'Milestone not found' });
     }
+    if (String(existing.user) !== String(req.user._id)) {
+      return res
+        .status(403)
+        .json({ message: 'You can only delete your own milestones' });
+    }
+
+    if (existing.goal) {
+      await Goal.updateOne(
+        { _id: existing.goal },
+        { $pull: { milestones: existing._id } }
+      );
+    }
+
+    await existing.deleteOne();
 
     res
       .status(200)
-      .json({ message: 'Milestone deleted successfully', milestone });
+      .json({ message: 'Milestone deleted successfully', milestone: existing });
   } catch (error) {
     res
       .status(500)
