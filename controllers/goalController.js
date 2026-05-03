@@ -84,6 +84,59 @@ const getGoalById = async (req, res) => {
   }
 };
 
+const getGoalFull = async (req, res) => {
+  const goalId = req.params.id;
+
+  if (!mongoose.Types.ObjectId.isValid(goalId)) {
+    return res.status(400).json({ message: 'Invalid goal ID' });
+  }
+
+  try {
+    const goal = await Goal.findById(goalId).populate('milestones');
+
+    if (!goal) {
+      return res.status(404).json({ message: 'Goal not found' });
+    }
+
+    if (String(goal.user) !== String(req.user._id)) {
+      return res
+        .status(403)
+        .json({ message: 'You can only view your own goals' });
+    }
+
+    const tasks = await Task.find({ goal: goal._id }).sort({ createdAt: 1 });
+
+    const tasksByMilestone = new Map();
+    const unassignedTasks = [];
+    for (const task of tasks) {
+      if (task.milestone) {
+        const key = String(task.milestone);
+        if (!tasksByMilestone.has(key)) tasksByMilestone.set(key, []);
+        tasksByMilestone.get(key).push(task);
+      } else {
+        unassignedTasks.push(task);
+      }
+    }
+
+    const goalObj = goal.toObject();
+    goalObj.milestones = goalObj.milestones.map((m) => ({
+      ...m,
+      tasks: tasksByMilestone.get(String(m._id)) || [],
+    }));
+
+    res.status(200).json({
+      message: 'Goal retrieved successfully',
+      goal: goalObj,
+      unassignedTasks,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: 'Error while retrieving goal',
+      error: error.message,
+    });
+  }
+};
+
 const updateGoalById = async (req, res) => {
   const goalId = req.params.id;
   const updatedData = req.body;
@@ -146,11 +199,7 @@ const generatePlan = async (req, res) => {
     return res.status(400).json({ message: 'Goal title is required' });
   }
 
-  try {
-    const cohereResponse = await axios.post(
-      'https://api.cohere.ai/v1/chat',
-      {
-        message: `Break down the goal "${goalTitle}" into a valid JSON object ONLY. Do NOT include any explanation.
+  const prompt = `Break down the goal "${goalTitle}" into a valid JSON object ONLY. Do NOT include any explanation.
 
 Return only this format (pure JSON):
 {
@@ -162,11 +211,15 @@ Return only this format (pure JSON):
       "tasks": ["task 1", "task 2", "task 3"]
     }
   ]
-}`,
-        chat_history: [],
-        connectors: [],
+}`;
+
+  try {
+    const cohereResponse = await axios.post(
+      'https://api.cohere.com/v2/chat',
+      {
+        model: 'command-r-08-2024',
+        messages: [{ role: 'user', content: prompt }],
         temperature: 0.3,
-        model: 'command-light',
       },
       {
         headers: {
@@ -176,9 +229,16 @@ Return only this format (pure JSON):
       }
     );
 
-    let content = cohereResponse.data.text || cohereResponse.data.generation;
-    let cleanContent = content.trim();
+    const contentParts = cohereResponse.data?.message?.content || [];
+    const content = contentParts.map((p) => p.text || '').join('').trim();
 
+    if (!content) {
+      return res
+        .status(502)
+        .json({ message: 'AI returned an empty response' });
+    }
+
+    let cleanContent = content;
     if (cleanContent.startsWith('```')) {
       cleanContent = cleanContent
         .replace(/```(json)?/g, '')
@@ -192,15 +252,18 @@ Return only this format (pure JSON):
       plan.description = goalDescription;
     } catch (err) {
       return res
-        .status(500)
+        .status(502)
         .json({ message: 'Invalid AI response', raw: cleanContent });
     }
 
     res.status(200).json(plan);
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: 'Cohere API failed', error: error.message });
+    const upstream = error.response?.data;
+    res.status(502).json({
+      message: 'AI plan generation failed',
+      error: error.message,
+      upstream,
+    });
   }
 };
 
@@ -274,6 +337,7 @@ module.exports = {
   createGoal,
   getGoals,
   getGoalById,
+  getGoalFull,
   updateGoalById,
   deleteGoalById,
   generatePlan,

@@ -4,6 +4,7 @@ const {
   createGoal,
   updateGoalById,
   getGoalById,
+  getGoalFull,
   deleteGoalById,
   generatePlan,
   saveAIPlan,
@@ -13,6 +14,7 @@ const GoalRouter = express.Router();
 
 GoalRouter.get('/', protectRoute, getGoals);
 GoalRouter.post('/', protectRoute, createGoal);
+GoalRouter.get('/:id/full', protectRoute, getGoalFull);
 GoalRouter.get('/:id', protectRoute, getGoalById);
 GoalRouter.put('/:id', protectRoute, updateGoalById);
 GoalRouter.delete('/:id', protectRoute, deleteGoalById);
