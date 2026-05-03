@@ -12,6 +12,7 @@ const AuthRouter = require('./routers/Auth.router');
 const Goal = require('./models/Goal.model');
 const Task = require('./models/Task.model');
 const DashboardRouter = require('./routers/Dashboard.router');
+const CoachRouter = require('./routers/Coach.router');
 
 const app = express();
 
@@ -50,6 +51,7 @@ app.use('/tasks', TaskRouter);
 app.use('/posts', PostRouter);
 app.use('/users', UserRouter);
 app.use('/dashboard', DashboardRouter);
+app.use('/coach', CoachRouter);
 app.use('/uploads', express.static('uploads'));
 
 app.use((req, res, next) => {
