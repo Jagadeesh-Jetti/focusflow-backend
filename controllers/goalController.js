@@ -293,57 +293,69 @@ Return only this format (pure JSON):
 
 const saveAIPlan = async (req, res) => {
   try {
-    // console.log('this is reqbody from saveaiplan', req.body);
-    const { goal, category, description, milestones } = req.body;
+    const { goal, category, description, milestones, dueDate } = req.body;
     const userId = req.user._id;
 
-    // 1. Create the Goal
     const newGoal = new Goal({
       user: userId,
       title: goal,
       description,
       category,
+      dueDate: dueDate ? new Date(dueDate) : undefined,
     });
     await newGoal.save();
 
+    // Compute reasonable milestone target dates spread between now and goal due
+    // date (default: 90 days out if no dueDate given).
+    const now = Date.now();
+    const goalDeadline = dueDate
+      ? new Date(dueDate).getTime()
+      : now + 90 * 24 * 60 * 60 * 1000;
+    const totalSpan = Math.max(goalDeadline - now, 7 * 24 * 60 * 60 * 1000);
+    const total = milestones.length || 1;
+
     const milestoneIds = [];
 
-    // 2. Loop through milestones
-    for (const m of milestones) {
+    for (let i = 0; i < milestones.length; i++) {
+      const m = milestones[i];
       const taskIds = [];
 
-      // 3. Loop through tasks inside the milestone
+      // Evenly distribute milestone target dates across the goal timeline
+      const milestoneTarget = new Date(
+        now + Math.round((totalSpan * (i + 1)) / total)
+      );
+
       for (const taskTitle of m.tasks) {
         const task = new Task({
           title: taskTitle,
           description: taskTitle,
           user: userId,
-          milestone: null, // temporarily null
+          goal: newGoal._id,
+          milestone: null,
+          dueDate: milestoneTarget,
+          priority: 'medium',
         });
         await task.save();
         taskIds.push(task._id);
       }
 
-      // 4. Create the milestone
       const milestone = new Milestone({
         user: userId,
         goal: newGoal._id,
         title: m.title,
         description: m.title,
-        targetDate: new Date(), // you can customize this later
+        targetDate: milestoneTarget,
         tasks: taskIds,
       });
       await milestone.save();
       milestoneIds.push(milestone._id);
 
-      // 5. Update tasks with their milestone ID
       await Task.updateMany(
         { _id: { $in: taskIds } },
         { $set: { milestone: milestone._id } }
       );
     }
 
-    // 6. Add all milestone IDs to the goal
     newGoal.milestones = milestoneIds;
     await newGoal.save();
 
@@ -352,8 +364,7 @@ const saveAIPlan = async (req, res) => {
       goal: newGoal,
     });
   } catch (err) {
-    // console.error('❌ Error saving AI goal:', err);
-    res.status(500).json({ error: 'Failed to save AI goal' });
+    res.status(500).json({ error: 'Failed to save AI goal', detail: err.message });
   }
 };
 
