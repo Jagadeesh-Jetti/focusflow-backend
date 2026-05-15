@@ -1,4 +1,8 @@
 const User = require('../models/User.model');
+const Goal = require('../models/Goal.model');
+const Milestone = require('../models/Milestone.model');
+const Task = require('../models/Task.model');
+const Post = require('../models/Post.model');
 
 const getAllUsers = async (req, res) => {
   try {
@@ -191,6 +195,60 @@ const getFollowing = async (req, res) => {
   }
 };
 
+// Export all of the current user's data as JSON
+const exportMyData = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const user = await User.findById(userId).select('-password');
+    const goals = await Goal.find({ user: userId });
+    const milestones = await Milestone.find({ user: userId });
+    const tasks = await Task.find({ user: userId });
+    const posts = await Post.find({ user: userId });
+    const exportedAt = new Date().toISOString();
+
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="focusflow-export-${Date.now()}.json"`
+    );
+    res.status(200).json({
+      exportedAt,
+      user,
+      goals,
+      milestones,
+      tasks,
+      posts,
+    });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: 'Error exporting data', error: error.message });
+  }
+};
+
+// Permanently delete the authenticated user + all their content
+const deleteMyAccount = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    await Task.deleteMany({ user: userId });
+    await Milestone.deleteMany({ user: userId });
+    await Goal.deleteMany({ user: userId });
+    await Post.deleteMany({ user: userId });
+    // Remove this user from others' followers / following lists
+    await User.updateMany(
+      { $or: [{ followers: userId }, { following: userId }] },
+      { $pull: { followers: userId, following: userId } }
+    );
+    await User.findByIdAndDelete(userId);
+
+    res.status(200).json({ message: 'Account deleted' });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: 'Error deleting account', error: error.message });
+  }
+};
+
 module.exports = {
   getAllUsers,
   getUserProfile,
@@ -199,4 +257,6 @@ module.exports = {
   unfollowUser,
   getFollowers,
   getFollowing,
+  exportMyData,
+  deleteMyAccount,
 };

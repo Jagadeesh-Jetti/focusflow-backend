@@ -7,12 +7,16 @@ const {
   updateUserProfile,
   followUser,
   unfollowUser,
+  exportMyData,
+  deleteMyAccount,
 } = require('../controllers/userController');
 const protectRoute = require('../middlewares/authMiddleware');
 
 const UserRouter = express.Router();
 
 UserRouter.get('/all', protectRoute, getAllUsers);
+UserRouter.get('/me/export', protectRoute, exportMyData);
+UserRouter.delete('/me', protectRoute, deleteMyAccount);
 UserRouter.get('/:id/profile', protectRoute, getUserProfile);
 UserRouter.get('/:id/followers', protectRoute, getFollowers);
 UserRouter.get('/:id/following', protectRoute, getFollowing);

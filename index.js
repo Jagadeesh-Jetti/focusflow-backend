@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const rateLimit = require('express-rate-limit');
 
 const connectDB = require('./config/db');
 const GoalRouter = require('./routers/Goal.router');
@@ -44,14 +45,32 @@ app.get('/', (req, res) => {
   res.send('Hello world');
 });
 
-app.use('/auth', AuthRouter);
+// Rate limiters
+const authLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'Too many auth requests. Try again in a minute.' },
+});
+const aiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 15,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'AI rate limit reached. Slow down for a minute.' },
+});
+
+app.use('/auth', authLimiter, AuthRouter);
+app.use('/coach', aiLimiter, CoachRouter);
+app.use('/goals/generate-plan', aiLimiter);
+app.use('/goals/save-ai-plan', aiLimiter);
 app.use('/goals', GoalRouter);
 app.use('/milestones', MilestoneRouter);
 app.use('/tasks', TaskRouter);
 app.use('/posts', PostRouter);
 app.use('/users', UserRouter);
 app.use('/dashboard', DashboardRouter);
-app.use('/coach', CoachRouter);
 app.use('/uploads', express.static('uploads'));
 
 app.use((req, res, next) => {
