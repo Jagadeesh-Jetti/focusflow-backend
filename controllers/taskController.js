@@ -1,5 +1,7 @@
 const mongoose = require('mongoose');
 const Task = require('../models/Task.model');
+const User = require('../models/User.model');
+const { recordStreakActivity } = require('../utils/streak');
 
 const createTask = async (req, res) => {
   const { milestone, goal, title, description, dueDate, priority, status } =
@@ -104,6 +106,19 @@ const updateTaskById = async (req, res) => {
     const updatedTask = await Task.findByIdAndUpdate(taskId, updatedData, {
       new: true,
     });
+
+    // Touch the user's streak when a task transitions to completed
+    if (
+      updatedData.status === 'completed' &&
+      task.status !== 'completed'
+    ) {
+      try {
+        const userDoc = await User.findById(req.user._id);
+        if (userDoc) await recordStreakActivity(userDoc);
+      } catch (e) {
+        // non-fatal: streak update should never block the task update response
+      }
+    }
 
     res
       .status(200)

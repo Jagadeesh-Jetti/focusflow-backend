@@ -15,6 +15,10 @@ const userSchema = new mongoose.Schema({
 
   posts: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Post' }],
   goals: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Goal' }],
+
+  streakCount: { type: Number, default: 0 },
+  lastActivityAt: { type: Date, default: null },
+
   createdAt: { type: Date, default: Date.now },
 });
 

@@ -1,6 +1,7 @@
 const Task = require('../models/Task.model');
 const Goal = require('../models/Goal.model');
 const Milestone = require('../models/Milestone.model');
+const User = require('../models/User.model');
 
 const getStats = async (req, res) => {
   try {
@@ -19,12 +20,28 @@ const getStats = async (req, res) => {
       status: { $ne: 'completed' },
     });
 
+    const userDoc = await User.findById(userId).select(
+      'streakCount lastActivityAt'
+    );
+    // Streak is valid only if last activity was today or yesterday
+    let streakCount = userDoc?.streakCount || 0;
+    if (userDoc?.lastActivityAt) {
+      const last = new Date(userDoc.lastActivityAt);
+      const today = new Date();
+      const diffDays = Math.floor(
+        (today.setHours(0, 0, 0, 0) - new Date(last).setHours(0, 0, 0, 0)) /
+          (1000 * 60 * 60 * 24)
+      );
+      if (diffDays > 1) streakCount = 0;
+    }
+
     res.json({
       totalGoals,
       totalTasks,
       completedTasks,
       pendingTasks,
       activeGoals,
+      streakCount,
     });
   } catch (error) {
     console.error('Error fetching stats:', error);
